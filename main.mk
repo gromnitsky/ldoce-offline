@@ -31,6 +31,7 @@ $ make db patch pack APK=my.apk
 endef
 
 $(if $(APK),,$(error APK var is empty))
+$(if $(filter $(src),$(CURDIR)/),$(error do not run Make in src dir),)
 
 .PHONY: unpack
 unpack: $(apk.unpack.dir)
