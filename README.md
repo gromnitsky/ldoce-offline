@@ -15,6 +15,7 @@ rebuild the apk.
 
 * Ruby 2+
 * [LDOCE 1.3 apk](https://play.google.com/store/apps/details?id=com.mobifusion.android.ldoce5)
+* jdk 1.7+
 * Android SDK Tools
 * [apktool](http://ibotpeaches.github.io/Apktool/install/)
 * Linux (tested on Fedora 22)
@@ -25,11 +26,12 @@ Create an umbrella directory:
 
 	$ mkdir ldoce-offline
 	$ cd !$
-	$ git clone 123
+	$ git clone https://github.com/gromnitsky/ldoce-offline
 
 **Don't run any commands under the cloned source directory.** Do this
 instead:
 
+	$ cd ..
 	$ mkdir _out
 	$ cd !$
 	$ cp /where/my/apk/file/is/com.mobifusion.android.ldoce5.3.apk .
@@ -53,7 +55,7 @@ After that, copy `longmandictionariesusa` directory (2.1GB) to
 
 ## Generating new APK
 
-(in `_out` directory)
+(While still in `_out` directory)
 
 	$ make -f ../ldoce-offline/main.mk APK=com.mobifusion.android.ldoce5.3.apk db patch pack
 
