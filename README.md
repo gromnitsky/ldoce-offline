@@ -1,3 +1,16 @@
+# ldoce-offline
+
+A hack to force an android version of Longman Dictionary of
+Contemporary English (LDOCE) to work offline. The audio edition of the
+dictionary looks up for headwords pronunciations & recorded examples
+in an external web server that sometimes struggles to keep up w/
+requests.
+
+We can extract all the entries from the LDOCE app db; parse their
+broken xml; search for .mp3/.jpg filenames; download all external
+resources; decode the dex files; replace `http://` links w/ `file://`;
+rebuild the apk.
+
 ## Sine qua non
 
 * Ruby 2+
@@ -34,6 +47,9 @@ Run the downloader:
 It'll take a loooong time. In any moment you can press
 <kbd>Ctrl-C</kbd> & rerun the command later--the script won't fetch the same
 file twice.
+
+After that, copy `longmandictionariesusa` directory (2.1GB) to
+`/sdcard` directory on your device. (This path is hardcoded.)
 
 ## Generating new APK
 
