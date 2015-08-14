@@ -1,6 +1,6 @@
 # ldoce-offline
 
-A hack to force an android version of Longman Dictionary of
+A small hack to force an android version of Longman Dictionary of
 Contemporary English (LDOCE) to work offline. The audio edition of the
 dictionary looks up for headwords pronunciations & recorded examples
 in an external web server that sometimes struggles to keep up w/
@@ -31,14 +31,13 @@ Create an umbrella directory:
 **Don't run any commands under the cloned source directory.** Do this
 instead:
 
-	$ cd ..
 	$ mkdir _out
 	$ cd !$
 	$ cp /where/my/apk/file/is/com.mobifusion.android.ldoce5.3.apk .
 
 Install required gems:
 
-	$ ln -s ../ldoce-offline/Gemfile .
+	$ ln -s ../ldoce-offline/Gemfile* .
 	$ rvm gemset use ldoce
 	$ bundle install
 
@@ -53,19 +52,24 @@ file twice.
 After that, copy `longmandictionariesusa` directory (2.1GB) to
 `/sdcard` directory on your device. (This path is hardcoded.)
 
-## Generating new APK
+## Generating a new APK
 
 (While still in `_out` directory)
 
-	$ make -f ../ldoce-offline/main.mk APK=com.mobifusion.android.ldoce5.3.apk db patch pack
+	$ make -f ../ldoce-offline/main.mk APK=com.mobifusion.android.ldoce5.3.apk pack
 
 `ldoce-offline-1.3.apk` file should appear.
 
-Install it to your device:
+If you don't have an Android debug keystore
+`~/.android/debug.keystore` & a build step fails,
+[look here](http://stackoverflow.com/questions/8576732) how to
+generate one.
+
+Finally, install a new apk into your device:
 
 	$ adb install ldoce-offline-1.3.apk
 
-You must remove the original LDOCE app before installing this one.
+You must uninstall the original LDOCE app before installing this one.
 
 ## License
 
