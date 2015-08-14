@@ -1,0 +1,40 @@
+diff -aru --binary apk.orig/smali/com/mobifusion/android/data/ConverterCss.smali apk/smali/com/mobifusion/android/data/ConverterCss.smali
+--- apk.orig/smali/com/mobifusion/android/data/ConverterCss.smali	2015-08-14 11:35:56.779439890 +0300
++++ apk/smali/com/mobifusion/android/data/ConverterCss.smali	2015-08-14 11:36:53.646511868 +0300
+@@ -4,7 +4,7 @@
+ 
+ 
+ # static fields
+-.field public static final EXAMPLE_SERVER_PATH:Ljava/lang/String; = "http://www.longmandictionariesusa.com/res/ldoce/audio/exa/"
++.field public static final EXAMPLE_SERVER_PATH:Ljava/lang/String; = "file:///sdcard/longmandictionariesusa/res/ldoce/audio/exa/"
+ 
+ 
+ # instance fields
+@@ -263,7 +263,7 @@
+ 
+     .prologue
+     .line 637
+-    const-string v0, "http://www.longmandictionariesusa.com/res/ldoce/images/mobile/fullsize/"
++    const-string v0, "file:///sdcard/longmandictionariesusa/res/ldoce/images/mobile/fullsize/"
+ 
+     return-object v0
+ .end method
+@@ -273,7 +273,7 @@
+ 
+     .prologue
+     .line 632
+-    const-string v0, "http://www.longmandictionariesusa.com/res/ldoce/audio/hwd/"
++    const-string v0, "file:///sdcard/longmandictionariesusa/res/ldoce/audio/hwd/"
+ 
+     return-object v0
+ .end method
+@@ -791,7 +791,7 @@
+ 
+     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+ 
+-    const-string v1, "<span onClick=\"openWord(\'http://www.longmandictionariesusa.com/res/ldoce/audio/exa/"
++    const-string v1, "<span onClick=\"openWord(\'file:///sdcard/longmandictionariesusa/res/ldoce/audio/exa/"
+ 
+     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+ 
+Only in apk/smali/com/mobifusion/android/data: ConverterCss.smali.orig
