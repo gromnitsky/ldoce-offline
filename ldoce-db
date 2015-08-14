@@ -1,0 +1,237 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'zlib'
+require 'stringio'
+require 'open-uri'
+require 'logger'
+require 'fileutils'
+
+require "sqlite3"
+require 'nokogiri'
+require 'andand'
+
+$conf = {
+  mode: nil,
+  resdir: 'longmandictionariesusa',
+  pdatadir: 'pdata',
+  db: nil,
+}
+
+
+
+# US:
+# http://www.longmandictionariesusa.com/res/ldoce/audio/hwd/ame/FILE.mp3
+#
+# GB:
+# http://www.longmandictionariesusa.com/res/ldoce/audio/hwd/bre/FILE.mp3
+#
+# Examples:
+# FILE.wav -> http://www.longmandictionariesusa.com/res/ldoce/audio/exa/FILE.mp3
+#
+# Images:
+# FILE.png -> http://www.longmandictionariesusa.com/res/ldoce/images/mobile/fullsize/FILE.jpg
+def print_urls db, tables
+  tables.each do |tbl|
+    db.execute("select word,pdata,pic,usa,uk from #{tbl}") do |row|
+      pdata = xml2urls row[1]
+
+      pic = [nil]
+      if row[2]
+        pic = ['http://www.longmandictionariesusa.com/res/ldoce/images/mobile/fullsize/%s.jpg' % row[2].sub(/\.[^.]+$/, '').downcase]
+      end
+
+      usa = [nil]
+      if row[3]
+        usa = ['http://www.longmandictionariesusa.com/res/ldoce/audio/hwd/ame/' + row[3]]
+      end
+
+      uk = [nil]
+      if row[4]
+        uk = ['http://www.longmandictionariesusa.com/res/ldoce/audio/hwd/bre/' + row[4]]
+      end
+
+      puts "# #{row[0]}"
+      (pdata + pic + usa + uk).select {|name| name}.each {|name| puts name}
+    end
+  end
+end
+
+def xml2urls xml
+  doc = Nokogiri::XML pdata2xml xml
+  url = 'http://www.longmandictionariesusa.com/res/ldoce/audio/exa/%s.mp3'
+  url_plain = doc.xpath('//p:EXAMPLE')
+              .select { |e| e.attr('id').andand.match(/\.(wav|mp3)$/) }
+              .map { |e| url % e.attr('id').sub(/\.[^.]+$/, '') }
+  url_js = doc.xpath("//*[@onClick]")
+           .map { |e| e.attr('onClick').match(/(http:[^'"]+)/) {|m| m[1]} }
+           .select {|e| e }
+
+  url_plain + url_js
+end
+
+def pdata2xml raw
+  xml = xml_prep gunzip(raw.unpack('m').first)
+  "<?xml version='1.0' encoding='UTF-8'?>\n<root xmlns:p='1'>\n" + xml + "\n</root>\n"
+end
+
+def gunzip data
+  Zlib::GzipReader.new(StringIO.new data).read
+end
+
+def dump_pdata db, tables
+  Dir.mkdir $conf[:pdatadir] rescue nil
+  tables.each do |tbl|
+    db.execute("select id,word,pdata from #{tbl}") do |row|
+      word = row[1].gsub(/[^a-zA-Z0-9_-]/, '_') # gnu make safe
+      fname = File.join [$conf[:pdatadir], "#{word}.#{row[0]}.xml"]
+      File.open(fname, "w+") do |fd|
+        fd.write pdata2xml row[2]
+      end
+    end
+  end
+  Dir.rmdir $conf[:pdatadir] rescue nil
+end
+
+# blame lazy Pearson programmers for not producing a valid xml
+def xml_prep text
+  text.gsub(/<(img|option)(.+?)?>/, '<\1 \2 />')
+    .gsub(/<\/?(p|br|hr)\/?>/, '')
+    .gsub(/<span>/, '</span>')
+    .gsub(/<p:OPP><p:OPP/, '<p:OPP>')
+    .gsub(/<p:OPP<span/, '<span')
+    .gsub(/<p:SYN><p:SYN/, '<p:SYN>')
+    .gsub(/;"(onClick|src)=/, ';" \1=')
+    .gsub(/"alt="/, '" alt="')
+    .gsub(/<p:BREQUIV><p:BREQUIV>/, '<p:BREQUIV>')
+    .gsub(/<p:AMEQUIV><p:AMEQUIV>/, '<p:AMEQUIV>')
+    .gsub(/alt=""\/\/>/, 'alt="" />')
+    .gsub(/<p:SYN<span/, '<span')
+    .gsub(/&nbsp;/, '&#x00A0;')
+    .gsub(/&rarr;/, '&#x2192;')
+    .gsub(/&darr;/, '&#x2193;')
+    .gsub(/&mdash;/, '&#x2014;')
+    .gsub(/<\/p:(CROSSREFTYPE|Crossrefto)>
+<p:REFHWD (.+)<\/p:REFHWD>
+<\/p:Crossrefto>
+<\/p:Crossref>/, '</p:\1>
+<p:Crossrefto>
+<p:REFHWD \2</p:REFHWD>
+</p:Crossrefto>
+</p:Crossref>')
+    .gsub(/<(\/?p:(AMEQUIV|EXAMPLE|Hint|GramExa|DEF|Tail|ColloExa))>
+<p:Crossrefto /, '<\1>
+<p:Crossref>
+<p:Crossrefto ')
+    .gsub(/<\/p:(GramExa|Crossref|DEF)>
+<p:Crossref>
+<p:(REFLEX|REFHWD)/, '</p:\1>
+<p:Crossref>
+<p:Crossrefto>
+<p:\2>')
+    .gsub(/<p:Tail>
+<p:Crossref>
+<p:(REFHWD|REFLEX)/, '<p:Tail>
+<p:Crossref>
+<p:Crossrefto>
+<p:\1')
+    .gsub(/<\/p:Head>\n<p:Crossrefto /, '</p:Head><p:Sense><p:Crossref><p:Crossrefto ')
+    .gsub(/<\/p:(EXAMPLE|GramExa)>\n<\/p:Crossref>\n<\/p:Sense>/, "</p:\\1>\n</p:Sense>")
+    .gsub(/<p:Tail>\n<\/p:Crossref>\n<\/p:Tail>/, '')
+end
+
+# $ ./ldoce-db-create -s ldoce.sqlite3 | awk '{sum += $2} END {print sum}'
+def print_stat db, tables
+  tables.each do |tbl|
+    db.execute("select count(*) from #{tbl}") do |row|
+      puts "#{tbl} #{row.first}"
+    end
+  end
+end
+
+# ./ldoce-db -u ldoce.sqlite3 | ./ldoce-db --fetch
+def fetch input
+  img, us, gb, examples = grab_urls input
+  fetch_items "img", img, "#{$conf[:resdir]}/res/ldoce/images/mobile/fullsize"
+  fetch_items "us", us, "#{$conf[:resdir]}/res/ldoce/audio/hwd/ame"
+  fetch_items "gb", gb, "#{$conf[:resdir]}/res/ldoce/audio/hwd/bre"
+  fetch_items "examples", examples, "#{$conf[:resdir]}/res/ldoce/audio/exa"
+end
+
+def grab_urls input
+  input = input.split("\n")
+
+  img = input.select {|idx| idx.include? '/images/' }.sort.uniq
+  us = input.select {|idx| idx.include? '/audio/hwd/ame/' }.sort.uniq
+  gb = input.select {|idx| idx.include? '/audio/hwd/bre/' }.sort.uniq
+  examples = input.select {|idx| idx.include? '/audio/exa/' }.sort.uniq
+
+  [img, us, gb, examples]
+end
+
+def fetch_items logname, arr, outdir
+  FileUtils.mkdir_p 'log'
+  logfile = File.open("log/#{logname}.log", File::WRONLY | File::CREAT | File::TRUNC)
+  logger = Logger.new logfile
+  logger.info "start"
+
+  FileUtils.mkdir_p outdir
+
+  arr.each_with_index do |url, index|
+    puts "#{index+1}/#{arr.length} #{url}"
+    result = File.join [outdir, File.basename(url)]
+    if File.exists?(result) && File.size(result) > 0
+      $stderr.puts "#{result} is already here"
+      next
+    end
+
+    begin
+      open url do |fd|
+        File.open(result, "w+") { |out| out.write fd.read }
+      end
+    rescue OpenURI::HTTPError
+      err = "#{url}: #{$!}"
+      logger.error err
+      $stderr.puts err
+    end
+  end
+
+  logfile.close
+end
+
+
+
+
+op = OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} option [db]"
+
+  opts.on("-s DB", "print stat") do |db|
+    $conf[:mode] = 'stat'
+    $conf[:db] = db
+  end
+  opts.on("-u DB", "print urls") do |db|
+    $conf[:mode] = 'url'
+    $conf[:db] = db
+  end
+  opts.on("--pdata DB", "extract all articles into `#{$conf[:pdatadir]}/word.id.xml' files") do |db|
+    $conf[:mode] = 'pdata'
+    $conf[:db] = db
+  end
+  opts.on("--fetch", "read urls from stdin & download all data to `#{$conf[:resdir]}' dir") do |v|
+    $conf[:mode] = 'fetch'
+  end
+end
+op.parse!
+
+input_tables = ('a'..'z').to_a.map {|idx| "entry_#{idx}"}
+input = SQLite3::Database.open $conf[:db] if $conf[:db]
+
+case $conf[:mode]
+when 'stat'  then print_stat input, input_tables
+when 'url'   then print_urls input, input_tables
+when 'pdata' then dump_pdata input, input_tables
+when 'fetch' then fetch $stdin.read
+else
+  $stderr.puts op
+  exit 1
+end
