@@ -6,7 +6,7 @@ diff -aru --binary apk.orig/smali/com/mobifusion/android/data/ConverterCss.smali
  
  # static fields
 -.field public static final EXAMPLE_SERVER_PATH:Ljava/lang/String; = "http://www.longmandictionariesusa.com/res/ldoce/audio/exa/"
-+.field public static final EXAMPLE_SERVER_PATH:Ljava/lang/String; = "file:///sdcard/longmandictionariesusa/res/ldoce/audio/exa/"
++.field public static final EXAMPLE_SERVER_PATH:Ljava/lang/String; = "file:///data/sdext2/longmandictionariesusa/res/ldoce/audio/exa/"
  
  
  # instance fields
@@ -15,7 +15,7 @@ diff -aru --binary apk.orig/smali/com/mobifusion/android/data/ConverterCss.smali
      .prologue
      .line 637
 -    const-string v0, "http://www.longmandictionariesusa.com/res/ldoce/images/mobile/fullsize/"
-+    const-string v0, "file:///sdcard/longmandictionariesusa/res/ldoce/images/mobile/fullsize/"
++    const-string v0, "file:///data/sdext2/longmandictionariesusa/res/ldoce/images/mobile/fullsize/"
  
      return-object v0
  .end method
@@ -24,7 +24,7 @@ diff -aru --binary apk.orig/smali/com/mobifusion/android/data/ConverterCss.smali
      .prologue
      .line 632
 -    const-string v0, "http://www.longmandictionariesusa.com/res/ldoce/audio/hwd/"
-+    const-string v0, "file:///sdcard/longmandictionariesusa/res/ldoce/audio/hwd/"
++    const-string v0, "file:///data/sdext2/longmandictionariesusa/res/ldoce/audio/hwd/"
  
      return-object v0
  .end method
@@ -33,7 +33,7 @@ diff -aru --binary apk.orig/smali/com/mobifusion/android/data/ConverterCss.smali
      invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
  
 -    const-string v1, "<span onClick=\"openWord(\'http://www.longmandictionariesusa.com/res/ldoce/audio/exa/"
-+    const-string v1, "<span onClick=\"openWord(\'file:///sdcard/longmandictionariesusa/res/ldoce/audio/exa/"
++    const-string v1, "<span onClick=\"openWord(\'file:///data/sdext2/longmandictionariesusa/res/ldoce/audio/exa/"
  
      invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
  

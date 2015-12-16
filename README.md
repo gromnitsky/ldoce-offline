@@ -13,8 +13,9 @@ rebuild the apk.
 
 ## Sine qua non
 
+* LDOCE 1.3 apk (yes, an old one from around 2012; the app version
+  must be exactly 1.3)
 * Ruby 2+
-* [LDOCE 1.3 apk](https://play.google.com/store/apps/details?id=com.mobifusion.android.ldoce5)
 * jdk 1.7+
 * Android SDK Tools
 * [apktool](http://ibotpeaches.github.io/Apktool/install/)
@@ -49,8 +50,27 @@ It'll take a loooong time. In any moment you can press
 <kbd>Ctrl-C</kbd> & rerun the command later--the script won't fetch the same
 file twice.
 
-After that, copy `longmandictionariesusa` directory (2.1GB) to
-`/sdcard` directory on your device. (This path is hardcoded.)
+## Copying files to sd card
+
+SD cards in Android phones are usually formatted w/ the FAT32
+filesystem that won't fly in our case for
+[FAT32 has a limitation](http://superuser.com/questions/446282/max-files-per-directory-on-ntfs-vol-vs-fat32)
+of 2<sup>16</sup> files per directory. (I hit the ceiling around 21844.)
+
+Thus we need to create another partition on the sdcard & format it w/
+ext3 or ext4 filesystems & automount that partition during the
+boot. As I was already using
+[Link2SD](http://www.link2sd.info/description) that requires to have a
+separate ext3 partition for it to work properly I chose `/data/sdext2`
+as an umbrella directory for the downloaded LDOCE assets.
+
+E.g. copy `longmandictionariesusa` directory (2.1GB, 163,423 files) to
+`/data/sdext2` directory on your device. This path is hardcoded &
+shoud be world-readable (`0755` is fine). If you have plenty of
+internal space in the phone, replace `/data/sdext2/` strings to the
+desired location in
+`patch/apk_smali_com_mobifusion_android_data_ConverterCss.smali.patch`
+file before...
 
 ## Generating a new APK
 
