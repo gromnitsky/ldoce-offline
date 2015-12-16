@@ -80,3 +80,4 @@ verify: $(apk.new)
 .PHONY: fetch
 fetch: $(apk.db)
 	$(src)/ldoce-db -u $< | $(src)/ldoce-db --fetch
+	touch longmandictionariesusa/.nomedia
